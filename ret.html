@@ -1,0 +1,1313 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Minimal Shop</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/remixicon@4.5.0/fonts/remixicon.css" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com/3.4.16"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#3B82F6',
+                        secondary: '#10B981',
+                        neutral: '#F1F5F9'
+                    },
+                    borderRadius: {
+                        'sm': '4px',
+                        DEFAULT: '8px',
+                        'md': '12px',
+                        'lg': '16px',
+                        'xl': '20px',
+                        'full': '9999px',
+                        'button': '8px'
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        .product-card, .category-card { transition: all 0.3s ease; }
+        .product-card:hover, .category-card:hover { transform: translateY(-4px); box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05); }
+        .modal { transition: opacity 0.3s ease; }
+        .modal-content { transition: transform 0.3s ease, opacity 0.3s ease; }
+        .fade-in { animation: fadeIn 0.5s ease forwards; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        .close-btn { transition: all 0.3s ease; }
+        .close-btn:hover { transform: rotate(45deg); background-color: #DBEAFE; }
+        .star { cursor: pointer; transition: color 0.2s ease; }
+        .star:hover, .star.filled { color: #FBBF24; }
+        .buy-btn { transition: all 0.3s ease; }
+        .buy-btn:hover:not(:disabled) { background-color: #059669; }
+        .buy-btn:disabled { background-color: #D1D5DB; cursor: not-allowed; }
+        .dropdown:hover .dropdown-menu { display: block; }
+        .mt-16 { margin-top: 4rem; }
+    </style>
+</head>
+<body class="bg-neutral min-h-screen">
+    <div id="app">
+        <!-- Navigation -->
+        <nav class="bg-white shadow-sm">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div class="flex justify-between h-16">
+                    <div class="flex items-center">
+                        <a href="#" class="text-primary text-2xl font-semibold">Minimal</a>
+                    </div>
+                    <div class="hidden md:flex items-center space-x-8">
+                        <a href="#" class="text-gray-900 hover:text-primary px-3 py-2 text-sm font-medium transition-colors" data-page="home">หน้าหลัก</a>
+                        <div class="relative dropdown">
+                            <a href="#" class="text-gray-500 hover:text-primary px-3 py-2 text-sm font-medium transition-colors" data-page="products">สินค้า</a>
+                            <div class="dropdown-menu hidden absolute z-10 mt-2 w-48 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5">
+                                <div class="py-1" id="categoriesMenu"></div>
+                            </div>
+                        </div>
+                        <a href="#" class="text-gray-500 hover:text-primary px-3 py-2 text-sm font-medium transition-colors" data-page="categories">หมวดหมู่</a>
+                        <a href="#" class="text-gray-500 hover:text-primary px-3 py-2 text-sm font-medium transition-colors" data-page="about">เกี่ยวกับเรา</a>
+                        <a href="#" id="profileLink" class="text-gray-500 hover:text-primary px-3 py-2 text-sm font-medium transition-colors hidden" data-page="profile">โปรไฟล์</a>
+                        <a href="#" id="pointsLink" class="text-gray-500 hover:text-primary px-3 py-2 text-sm font-medium transition-colors hidden" data-page="points">แต้มสะสม</a>
+                        <a href="#" id="topPointsLink" class="text-gray-500 hover:text-primary px-3 py-2 text-sm font-medium transition-colors" data-page="topPoints">อันดับแต้ม</a>
+                        <a href="#" id="purchaseHistoryLink" class="text-gray-500 hover:text-primary px-3 py-2 text-sm font-medium transition-colors hidden" data-page="purchaseHistory">ประวัติการสั่งซื้อ</a>
+                        <a href="#" id="adminLink" class="text-gray-500 hover:text-primary px-3 py-2 text-sm font-medium transition-colors hidden" data-page="admin">จัดการ</a>
+                        <a href="#" class="text-gray-500 hover:text-primary px-3 py-2 text-sm font-medium transition-colors hidden" data-page="manageCategories" id="manageCategoriesLink">จัดการหมวดหมู่</a>
+                        <a href="#" class="text-gray-500 hover:text-primary px-3 py-2 text-sm font-medium transition-colors hidden" data-page="manageProducts" id="manageProductsLink">จัดการสินค้า</a>
+                    </div>
+                    <div class="flex items-center space-x-4">
+                        <button id="loginBtn" class="flex items-center space-x-2 text-gray-700 hover:text-primary transition-colors">
+                            <i class="ri-user-line"></i>
+                            <span class="text-sm font-medium">เข้าสู่ระบบ</span>
+                        </button>
+                        <button id="registerBtn" class="flex items-center space-x-2 text-gray-700 hover:text-primary transition-colors">
+                            <i class="ri-user-add-line"></i>
+                            <span class="text-sm font-medium">สมัครสมาชิก</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </nav>
+
+        <!-- Main Content -->
+        <main>
+            <!-- Home Page -->
+            <div id="homePage" class="page active">
+                <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
+                    <div class="text-center">
+                        <h1 class="text-4xl font-bold text-gray-900">สินค้าคุณภาพในสไตล์มินิมอล</h1>
+                        <p class="mt-4 text-lg text-gray-500 max-w-2xl mx-auto">ค้นพบสินค้าที่ออกแบบอย่างเรียบง่ายแต่เต็มไปด้วยคุณภาพ</p>
+                        <a href="#" class="mt-8 inline-block !rounded-button px-6 py-3 bg-primary text-white font-medium hover:bg-primary/90 transition-colors" data-page="products">ดูสินค้าทั้งหมด</a>
+                    </div>
+                    <div class="mt-16">
+                        <h2 class="text-2xl font-semibold text-gray-900 text-center">สินค้าแนะนำ</h2>
+                        <div class="mt-8 grid gap-8 md:grid-cols-2 lg:grid-cols-3" id="featuredProducts"></div>
+                    </div>
+                    <div class="mt-16">
+                        <h2 class="text-2xl font-semibold text-gray-900 text-center">สินค้ายอดนิยม</h2>
+                        <div class="mt-8 grid gap-8 md:grid-cols-2 lg:grid-cols-3" id="trendingProducts"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Products Page -->
+            <div id="productsPage" class="page hidden">
+                <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
+                    <h2 class="text-3xl font-semibold text-gray-900 text-center">สินค้าทั้งหมด</h2>
+                    <div class="mt-4 flex justify-end">
+                        <select id="sortProducts" class="border border-gray-300 text-gray-900 text-sm rounded-lg block p-2.5">
+                            <option value="default">เรียงตามค่าเริ่มต้น</option>
+                            <option value="views">เรียงตามยอดวิว</option>
+                        </select>
+                    </div>
+                    <div class="mt-8 grid gap-8 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4" id="allProducts"></div>
+                </div>
+            </div>
+
+            <!-- Categories Page -->
+            <div id="categoriesPage" class="page hidden">
+                <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
+                    <h2 class="text-3xl font-semibold text-gray-900 text-center">หมวดหมู่ทั้งหมด</h2>
+                    <div class="mt-8 grid gap-8 md:grid-cols-2 lg:grid-cols-3" id="allCategories"></div>
+                </div>
+            </div>
+
+            <!-- Category Detail Page -->
+            <div id="categoryDetailPage" class="page hidden">
+                <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
+                    <h2 id="categoryDetailTitle" class="text-3xl font-semibold text-gray-900 text-center"></h2>
+                    <p id="categoryDetailDescription" class="mt-4 text-lg text-gray-500 max-w-2xl mx-auto text-center"></p>
+                    <div class="mt-8 grid gap-8 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4" id="categoryProducts"></div>
+                </div>
+            </div>
+
+            <!-- About Page -->
+            <div id="aboutPage" class="page hidden">
+                <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
+                    <h2 class="text-3xl font-semibold text-gray-900 text-center">เกี่ยวกับเรา</h2>
+                    <p class="mt-4 text-lg text-gray-500 max-w-2xl mx-auto text-center">เราเป็นร้านค้าออนไลน์ที่มุ่งมั่นนำเสนอสินค้าคุณภาพในดีไซน์มินิมอล</p>
+                </div>
+            </div>
+
+            <!-- Purchase History Page -->
+            <div id="purchaseHistoryPage" class="page hidden">
+                <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
+                    <h2 class="text-3xl font-semibold text-gray-900 text-center">ประวัติการสั่งซื้อ</h2>
+                    <div class="mt-8 bg-white p-6 rounded-lg shadow-sm">
+                        <table class="w-full text-sm text-left text-gray-500">
+                            <thead class="text-xs text-gray-700 uppercase bg-gray-50">
+                                <tr>
+                                    <th class="px-6 py-3">สินค้า</th>
+                                    <th class="px-6 py-3">ของข้างใน</th>
+                                    <th class="px-6 py-3">วันที่ซื้อ</th>
+                                    <th class="px-6 py-3">จำนวน</th>
+                                    <th class="px-6 py-3">ราคารวม</th>
+                                    <th class="px-6 py-3">สต็อกที่เหลือ</th>
+                                </tr>
+                            </thead>
+                            <tbody id="userPurchaseTableBody"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Comment Page -->
+            <div id="commentPage" class="page hidden">
+                <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
+                    <h2 class="text-3xl font-semibold text-gray-900 text-center">ความคิดเห็นสำหรับ <span id="commentProductName"></span></h2>
+                    <div class="mt-8 bg-white p-6 rounded-lg shadow-sm">
+                        <div id="commentsList"></div>
+                        <form id="addCommentForm" class="mt-6">
+                            <textarea id="commentText" class="border border-gray-300 text-gray-900 text-sm rounded-lg block w-full p-2.5" placeholder="กรอกความคิดเห็น" required></textarea>
+                            <button type="submit" class="mt-4 !rounded-button px-6 py-3 bg-primary text-white font-medium hover:bg-primary/90 transition-colors">ส่งความคิดเห็น</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Top Points Page -->
+            <div id="topPointsPage" class="page hidden">
+                <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
+                    <h2 class="text-3xl font-semibold text-gray-900 text-center">อันดับแต้มสูงสุด</h2>
+                    <div class="mt-8 bg-white p-6 rounded-lg shadow-sm">
+                        <table class="w-full text-sm text-left text-gray-500">
+                            <thead class="text-xs text-gray-700 uppercase bg-gray-50">
+                                <tr>
+                                    <th class="px-6 py-3">อันดับ</th>
+                                    <th class="px-6 py-3">ชื่อผู้ใช้</th>
+                                    <th class="px-6 py-3">แต้ม</th>
+                                </tr>
+                            </thead>
+                            <tbody id="topPointsTableBody"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Admin Dashboard Page -->
+            <div id="adminPage" class="page hidden">
+                <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
+                    <div class="flex justify-between items-center mb-8">
+                        <h2 class="text-3xl font-semibold text-gray-900">Dashboard Admin</h2>
+                        <button id="logoutBtn" class="!rounded-button px-4 py-2 bg-red-500 text-white font-medium hover:bg-red-600 transition-colors">Logout</button>
+                    </div>
+                    <div class="grid gap-6 md:grid-cols-2 lg:grid-cols-4 mb-8">
+                        <div class="bg-white p-6 rounded-lg shadow-sm">
+                            <h3 class="text-lg font-semibold text-gray-900">Total Users</h3>
+                            <p id="totalUsers" class="text-2xl font-bold text-primary">0</p>
+                        </div>
+                        <div class="bg-white p-6 rounded-lg shadow-sm">
+                            <h3 class="text-lg font-semibold text-gray-900">Total Products</h3>
+                            <p id="totalProducts" class="text-2xl font-bold text-primary">0</p>
+                        </div>
+                        <div class="bg-white p-6 rounded-lg shadow-sm">
+                            <h3 class="text-lg font-semibold text-gray-900">Total Codes</h3>
+                            <p id="totalCodes" class="text-2xl font-bold text-primary">0</p>
+                        </div>
+                        <div class="bg-white p-6 rounded-lg shadow-sm">
+                            <h3 class="text-lg font-semibold text-gray-900">Total Points Given</h3>
+                            <p id="totalPointsGiven" class="text-2xl font-bold text-primary">0</p>
+                        </div>
+                    </div>
+                    <!-- Featured Products Management -->
+                    <div class="bg-white p-6 rounded-lg shadow-sm mb-8">
+                        <h3 class="text-xl font-semibold text-gray-900 mb-4">จัดการสินค้าแนะนำ</h3>
+                        <form id="featuredProductsForm">
+                            <div class="grid gap-4 md:grid-cols-3">
+                                <select id="featuredProduct1" class="border border-gray-300 text-gray-900 text-sm rounded-lg block w-full p-2.5"><option value="">เลือกสินค้า 1</option></select>
+                                <select id="featuredProduct2" class="border border-gray-300 text-gray-900 text-sm rounded-lg block w-full p-2.5"><option value="">เลือกสินค้า 2</option></select>
+                                <select id="featuredProduct3" class="border border-gray-300 text-gray-900 text-sm rounded-lg block w-full p-2.5"><option value="">เลือกสินค้า 3</option></select>
+                            </div>
+                            <button type="submit" class="mt-4 !rounded-button px-6 py-3 bg-primary text-white font-medium hover:bg-primary/90 transition-colors">บันทึก</button>
+                        </form>
+                    </div>
+                    <!-- Points Code Management -->
+                    <div class="bg-white p-6 rounded-lg shadow-sm mb-8">
+                        <h3 class="text-xl font-semibold text-gray-900 mb-6">Points Code Management</h3>
+                        <form id="addCodeForm" class="mb-6">
+                            <div class="grid gap-6 md:grid-cols-2">
+                                <div>
+                                    <label for="codeName" class="block mb-2 text-sm font-medium text-gray-900">ชื่อโค้ด</label>
+                                    <input type="text" id="codeName" class="border border-gray-300 text-gray-900 text-sm rounded-lg block w-full p-2.5" placeholder="กรอกชื่อโค้ด" required>
+                                </div>
+                                <div>
+                                    <label for="codePoints" class="block mb-2 text-sm font-medium text-gray-900">แต้ม</label>
+                                    <input type="number" id="codePoints" class="border border-gray-300 text-gray-900 text-sm rounded-lg block w-full p-2.5" placeholder="กรอกจำนวนแต้ม" required>
+                                </div>
+                                <div>
+                                    <label for="codeUsageLimit" class="block mb-2 text-sm font-medium text-gray-900">จำกัดการใช้</label>
+                                    <input type="number" id="codeUsageLimit" class="border border-gray-300 text-gray-900 text-sm rounded-lg block w-full p-2.5" placeholder="กรอกจำนวนครั้ง" required>
+                                </div>
+                                <div>
+                                    <label for="codeAssociatedUser" class="block mb-2 text-sm font-medium text-gray-900">ผูกกับผู้ใช้ (Email)</label>
+                                    <input type="email" id="codeAssociatedUser" class="border border-gray-300 text-gray-900 text-sm rounded-lg block w-full p-2.5" placeholder="กรอก email (ถ้ามี)">
+                                </div>
+                            </div>
+                            <button type="submit" class="mt-6 !rounded-button px-6 py-3 bg-primary text-white font-medium hover:bg-primary/90 transition-colors">เพิ่มโค้ด</button>
+                        </form>
+                        <table class="w-full text-sm text-left text-gray-500">
+                            <thead class="text-xs text-gray-700 uppercase bg-gray-50">
+                                <tr>
+                                    <th class="px-6 py-3">ชื่อโค้ด</th>
+                                    <th class="px-6 py-3">แต้ม</th>
+                                    <th class="px-6 py-3">จำกัดการใช้</th>
+                                    <th class="px-6 py-3">ใช้ไปแล้ว</th>
+                                    <th class="px-6 py-3">ผูกกับผู้ใช้</th>
+                                    <th class="px-6 py-3">การจัดการ</th>
+                                </tr>
+                            </thead>
+                            <tbody id="codesTableBody"></tbody>
+                        </table>
+                    </div>
+                    <!-- User Management -->
+                    <div class="bg-white p-6 rounded-lg shadow-sm mb-8">
+                        <h3 class="text-xl font-semibold text-gray-900 mb-6">จัดการผู้ใช้</h3>
+                        <table class="w-full text-sm text-left text-gray-500">
+                            <thead class="text-xs text-gray-700 uppercase bg-gray-50">
+                                <tr>
+                                    <th class="px-6 py-3">อีเมล</th>
+                                    <th class="px-6 py-3">วันที่สมัคร</th>
+                                    <th class="px-6 py-3">แต้ม</th>
+                                    <th class="px-6 py-3">บทบาท</th>
+                                    <th class="px-6 py-3">การจัดการ</th>
+                                </tr>
+                            </thead>
+                            <tbody id="usersTableBody"></tbody>
+                        </table>
+                        <h3 class="text-lg font-semibold text-gray-900 mt-6 mb-4">แก้ไขแต้มผู้ใช้</h3>
+                        <form id="editUserPointsForm" class="mb-6">
+                            <div class="grid gap-6 md:grid-cols-2">
+                                <div>
+                                    <label for="userEmail" class="block mb-2 text-sm font-medium text-gray-900">อีเมลผู้ใช้</label>
+                                    <select id="userEmail" class="border border-gray-300 text-gray-900 text-sm rounded-lg block w-full p-2.5" required>
+                                        <option value="">เลือกผู้ใช้</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label for="userPoints" class="block mb-2 text-sm font-medium text-gray-900">แต้ม</label>
+                                    <input type="number" id="userPoints" class="border border-gray-300 text-gray-900 text-sm rounded-lg block w-full p-2.5" placeholder="กรอกจำนวนแต้ม" required>
+                                </div>
+                            </div>
+                            <button type="submit" class="mt-6 !rounded-button px-6 py-3 bg-primary text-white font-medium hover:bg-primary/90 transition-colors">บันทึกแต้ม</button>
+                        </form>
+                    </div>
+                    <div class="mb-4">
+                        <label for="adminPageSelect" class="block mb-2 text-sm font-medium text-gray-900">เลือกหน้าแรก (สำหรับแอดมิน)</label>
+                        <select id="adminPageSelect" class="border border-gray-300 text-gray-900 text-sm rounded-lg block w-full p-2.5">
+                            <option value="admin">Dashboard Admin</option>
+                            <option value="manageCategories">จัดการหมวดหมู่</option>
+                            <option value="manageProducts">จัดการสินค้า</option>
+                            <option value="codes">จัดการโค้ด</option>
+                            <option value="users">จัดการผู้ใช้</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Manage Categories Page -->
+            <div id="manageCategoriesPage" class="page hidden">
+                <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
+                    <h2 class="text-3xl font-semibold text-gray-900 mb-8">จัดการหมวดหมู่</h2>
+                    <form id="addCategoryForm" class="mb-8">
+                        <div class="grid gap-6 md:grid-cols-2">
+                            <div>
+                                <label for="categoryName" class="block mb-2 text-sm font-medium text-gray-900">ชื่อหมวดหมู่</label>
+                                <input type="text" id="categoryName" class="border border-gray-300 text-gray-900 text-sm rounded-lg block w-full p-2.5" required>
+                            </div>
+                            <div>
+                                <label for="categoryDescription" class="block mb-2 text-sm font-medium text-gray-900">คำอธิบาย</label>
+                                <input type="text" id="categoryDescription" class="border border-gray-300 text-gray-900 text-sm rounded-lg block w-full p-2.5" required>
+                            </div>
+                            <div>
+                                <label for="categoryImage" class="block mb-2 text-sm font-medium text-gray-900">URL รูปภาพ</label>
+                                <input type="url" id="categoryImage" class="border border-gray-300 text-gray-900 text-sm rounded-lg block w-full p-2.5" required>
+                            </div>
+                        </div>
+                        <button type="submit" class="mt-6 !rounded-button px-6 py-3 bg-primary text-white font-medium hover:bg-primary/90 transition-colors">เพิ่มหมวดหมู่</button>
+                    </form>
+                    <table class="w-full text-sm text-left text-gray-500">
+                        <thead class="text-xs text-gray-700 uppercase bg-gray-50">
+                            <tr>
+                                <th class="px-6 py-3">ชื่อ</th>
+                                <th class="px-6 py-3">คำอธิบาย</th>
+                                <th class="px-6 py-3">การจัดการ</th>
+                            </tr>
+                        </thead>
+                        <tbody id="categoriesTableBody"></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Manage Products Page -->
+            <div id="manageProductsPage" class="page hidden">
+                <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
+                    <h2 class="text-3xl font-semibold text-gray-900 mb-8">จัดการสินค้า</h2>
+                    <form id="addProductForm" class="mb-8">
+                        <div class="grid gap-6 md:grid-cols-2">
+                            <div>
+                                <label for="productName" class="block mb-2 text-sm font-medium text-gray-900">ชื่อสินค้า</label>
+                                <input type="text" id="productName" class="border border-gray-300 text-gray-900 text-sm rounded-lg block w-full p-2.5" required>
+                            </div>
+                            <div>
+                                <label for="productCategory" class="block mb-2 text-sm font-medium text-gray-900">หมวดหมู่</label>
+                                <select id="productCategory" class="border border-gray-300 text-gray-900 text-sm rounded-lg block w-full p-2.5" required></select>
+                            </div>
+                            <div>
+                                <label for="productType" class="block mb-2 text-sm font-medium text-gray-900">ประเภท</label>
+                                <select id="productType" class="border border-gray-300 text-gray-900 text-sm rounded-lg block w-full p-2.5" required>
+                                    <option value="paid">มีค่าใช้จ่าย</option>
+                                    <option value="free">ฟรี</option>
+                                </select>
+                            </div>
+                            <div id="priceField" class="hidden">
+                                <label for="productPrice" class="block mb-2 text-sm font-medium text-gray-900">ราคา</label>
+                                <input type="number" id="productPrice" class="border border-gray-300 text-gray-900 text-sm rounded-lg block w-full p-2.5" placeholder="กรอกราคา">
+                            </div>
+                            <div>
+                                <label for="productStock" class="block mb-2 text-sm font-medium text-gray-900">สต็อก</label>
+                                <input type="number" id="productStock" class="border border-gray-300 text-gray-900 text-sm rounded-lg block w-full p-2.5" required>
+                            </div>
+                            <div>
+                                <label for="productImage" class="block mb-2 text-sm font-medium text-gray-900">URL รูปภาพ</label>
+                                <input type="url" id="productImage" class="border border-gray-300 text-gray-900 text-sm rounded-lg block w-full p-2.5" required>
+                            </div>
+                            <div class="md:col-span-2">
+                                <label for="productDescription" class="block mb-2 text-sm font-medium text-gray-900">คำอธิบาย</label>
+                                <textarea id="productDescription" class="border border-gray-300 text-gray-900 text-sm rounded-lg block w-full p-2.5" required></textarea>
+                            </div>
+                            <div class="md:col-span-2">
+                                <label for="productInventory" class="block mb-2 text-sm font-medium text-gray-900">ของข้างใน (คั่นด้วยเครื่องหมายจุลภาค)</label>
+                                <textarea id="productInventory" class="border border-gray-300 text-gray-900 text-sm rounded-lg block w-full p-2.5" placeholder="เช่น ขวดเบียร์ 500 มล., แก้วพิเศษ, ที่เปิดขวด"></textarea>
+                            </div>
+                        </div>
+                        <button type="submit" class="mt-6 !rounded-button px-6 py-3 bg-primary text-white font-medium hover:bg-primary/90 transition-colors">เพิ่มสินค้า</button>
+                    </form>
+                    <table class="w-full text-sm text-left text-gray-500">
+                        <thead class="text-xs text-gray-700 uppercase bg-gray-50">
+                            <tr>
+                                <th class="px-6 py-3">ชื่อ</th>
+                                <th class="px-6 py-3">หมวดหมู่</th>
+                                <th class="px-6 py-3">ประเภท</th>
+                                <th class="px-6 py-3">ราคา</th>
+                                <th class="px-6 py-3">สต็อก</th>
+                                <th class="px-6 py-3">ยอดวิว</th>
+                                <th class="px-6 py-3">การจัดการ</th>
+                            </tr>
+                        </thead>
+                        <tbody id="productsTableBody"></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Profile Page -->
+            <div id="profilePage" class="page hidden">
+                <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
+                    <h2 class="text-3xl font-semibold text-gray-900 text-center">โปรไฟล์ของฉัน</h2>
+                    <div class="mt-8 bg-white p-6 rounded-lg shadow-sm">
+                        <h3 class="text-xl font-semibold text-gray-900 mb-4">ข้อมูลส่วนตัว</h3>
+                        <form id="profileForm">
+                            <div class="grid gap-6 md:grid-cols-2">
+                                <div>
+                                    <label for="profileUsername" class="block mb-2 text-sm font-medium text-gray-900">ชื่อผู้ใช้</label>
+                                    <input type="text" id="profileUsername" class="border border-gray-300 text-gray-900 text-sm rounded-lg block w-full p-2.5" placeholder="กรอกชื่อผู้ใช้">
+                                </div>
+                                <div>
+                                    <label for="profileJoinDate" class="block mb-2 text-sm font-medium text-gray-900">วันที่สมัคร</label>
+                                    <input type="text" id="profileJoinDate" class="border border-gray-300 text-gray-900 text-sm rounded-lg block w-full p-2.5" disabled>
+                                </div>
+                            </div>
+                            <div class="mt-6">
+                                <label for="profilePassword" class="block mb-2 text-sm font-medium text-gray-900">รหัสผ่านใหม่</label>
+                                <input type="password" id="profilePassword" class="border border-gray-300 text-gray-900 text-sm rounded-lg block w-full p-2.5" placeholder="••••••••">
+                            </div>
+                            <button type="submit" class="mt-6 !rounded-button px-6 py-3 bg-primary text-white font-medium hover:bg-primary/90 transition-colors">บันทึกการเปลี่ยนแปลง</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Points Page -->
+            <div id="pointsPage" class="page hidden">
+                <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
+                    <h2 class="text-3xl font-semibold text-gray-900 text-center">ระบบสะสมแต้ม</h2>
+                    <div class="mt-8 bg-white p-6 rounded-lg shadow-sm">
+                        <h3 class="text-xl font-semibold text-gray-900 mb-4">กรอกรหัสเพื่อรับแต้ม</h3>
+                        <form id="redeemPointsForm">
+                            <div>
+                                <label for="pointsCode" class="block mb-2 text-sm font-medium text-gray-900">รหัสแต้ม</label>
+                                <input type="text" id="pointsCode" class="border border-gray-300 text-gray-900 text-sm rounded-lg block w-full p-2.5" placeholder="กรอกรหัสแต้ม" required>
+                            </div>
+                            <button type="submit" class="mt-6 !rounded-button px-6 py-3 bg-primary text-white font-medium hover:bg-primary/90 transition-colors">รับแต้ม</button>
+                        </form>
+                    </div>
+                    <div class="mt-8 bg-white p-6 rounded-lg shadow-sm">
+                        <h3 class="text-xl font-semibold text-gray-900 mb-4">แต้มสะสมของคุณ</h3>
+                        <p id="userPoints" class="text-lg font-medium text-gray-900">แต้มทั้งหมด: 0</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Login Modal -->
+            <div id="loginModal" class="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center hidden modal">
+                <div class="bg-white rounded-lg max-w-md w-full mx-4 modal-content">
+                    <div class="p-6">
+                        <div class="flex justify-between items-center mb-4">
+                            <h3 class="text-xl font-semibold text-gray-900">เข้าสู่ระบบ</h3>
+                            <button id="closeLoginModal" class="close-btn w-8 h-8 flex items-center justify-center rounded-full text-gray-500 hover:text-primary">
+                                <i class="ri-close-line"></i>
+                            </button>
+                        </div>
+                        <form id="loginForm">
+                            <div class="mb-4">
+                                <label for="email" class="block mb-2 text-sm font-medium text-gray-900">อีเมล</label>
+                                <input type="email" id="email" class="border border-gray-300 text-gray-900 text-sm rounded-lg block w-full p-2.5" placeholder="name@example.com" required>
+                            </div>
+                            <div class="mb-6">
+                                <label for="password" class="block mb-2 text-sm font-medium text-gray-900">รหัสผ่าน</label>
+                                <input type="password" id="password" class="border border-gray-300 text-gray-900 text-sm rounded-lg block w-full p-2.5" placeholder="••••••••" required>
+                            </div>
+                            <button type="submit" class="w-full !rounded-button py-3 bg-primary text-white font-medium hover:bg-primary/90 transition-colors">เข้าสู่ระบบ</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Register Modal -->
+            <div id="registerModal" class="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center hidden modal">
+                <div class="bg-white rounded-lg max-w-md w-full mx-4 modal-content">
+                    <div class="p-6">
+                        <div class="flex justify-between items-center mb-4">
+                            <h3 class="text-xl font-semibold text-gray-900">สมัครสมาชิก</h3>
+                            <button id="closeRegisterModal" class="close-btn w-8 h-8 flex items-center justify-center rounded-full text-gray-500 hover:text-primary">
+                                <i class="ri-close-line"></i>
+                            </button>
+                        </div>
+                        <form id="registerForm">
+                            <div class="mb-4">
+                                <label for="regEmail" class="block mb-2 text-sm font-medium text-gray-900">อีเมล</label>
+                                <input type="email" id="regEmail" class="border border-gray-300 text-gray-900 text-sm rounded-lg block w-full p-2.5" placeholder="name@example.com" required>
+                            </div>
+                            <div class="mb-6">
+                                <label for="regPassword" class="block mb-2 text-sm font-medium text-gray-900">รหัสผ่าน</label>
+                                <input type="password" id="regPassword" class="border border-gray-300 text-gray-900 text-sm rounded-lg block w-full p-2.5" placeholder="••••••••" required>
+                            </div>
+                            <button type="submit" class="w-full !rounded-button py-3 bg-primary text-white font-medium hover:bg-primary/90 transition-colors">สมัครสมาชิก</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Product Detail Modal -->
+            <div id="productDetailModal" class="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center hidden modal">
+                <div class="bg-white rounded-lg max-w-3xl w-full mx-4 modal-content">
+                    <div class="p-6">
+                        <div class="flex justify-between items-center mb-4">
+                            <h3 class="text-xl font-semibold text-gray-900">รายละเอียดสินค้า</h3>
+                            <button id="closeProductModal" class="close-btn w-8 h-8 flex items-center justify-center rounded-full text-gray-500 hover:text-primary">
+                                <i class="ri-close-line"></i>
+                            </button>
+                        </div>
+                        <div class="grid gap-8 md:grid-cols-2">
+                            <div>
+                                <img id="productDetailImage" src="" alt="Product" class="w-full h-auto rounded-lg">
+                            </div>
+                            <div>
+                                <h2 id="productDetailName" class="text-2xl font-semibold text-gray-900 mb-2"></h2>
+                                <div id="productDetailPrice" class="inline-block px-3 py-1 text-sm font-medium rounded mb-4"></div>
+                                <p id="productDetailDescription" class="text-gray-600 mb-4"></p>
+                                <div id="productDetailStock" class="mb-6">
+                                    <h4 class="text-sm font-medium text-gray-900 mb-2">สต็อกที่เหลือ:</h4>
+                                    <p id="stockCount" class="text-gray-600 text-sm"></p>
+                                </div>
+                                <button id="buyProductBtn" class="w-full !rounded-button py-3 bg-secondary text-white font-medium buy-btn" data-id="">กดซื้อ</button>
+                                <button id="commentBtn" class="mt-4 w-full !rounded-button py-2 bg-blue-500 text-white font-medium hover:bg-blue-600 transition-colors" data-id="">แสดงความคิดเห็น</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        const adminOverridePassword = "f3ceN@iM9Se!RPzwret014"; // รหัสผ่านพิเศษสำหรับ Admin
+
+        let categories = JSON.parse(localStorage.getItem('categories')) || [
+            { id: 1, name: "เครื่องประดับ", description: "นาฬิกาและเครื่องประดับดีไซน์มินิมอล", image: "https://readdy.ai/api/search-image?query=minimalist%20jewelry&width=400&height=300&seq=1" },
+            { id: 2, name: "อุปกรณ์อิเล็กทรอนิกส์", description: "อุปกรณ์อิเล็กทรอนิกส์ทันสมัย", image: "https://readdy.ai/api/search-image?query=modern%20electronics&width=400&height=300&seq=2" },
+            { id: 3, name: "แอลกอฮอล์", description: "เครื่องดื่มแอลกอฮอล์คุณภาพ", image: "https://readdy.ai/api/search-image?query=alcohol%20drinks&width=400&height=300&seq=5" }
+        ];
+        let products = JSON.parse(localStorage.getItem('products')) || [
+            { id: 1, name: "นาฬิกาข้อมือหนัง", description: "นาฬิกาข้อมือสายหนังแท้ ดีไซน์เรียบหรู", type: "paid", price: 2590, stock: 10, categoryId: 1, image: "https://readdy.ai/api/search-image?query=minimalist%20watch&width=400&height=300&seq=2", comments: [], ratings: [], averageRating: 0, inventory: "", views: 0 },
+            { id: 2, name: "หูฟังไร้สาย", description: "หูฟังไร้สายคุณภาพสูง เสียงดีเยี่ยม", type: "paid", price: 1990, stock: 10, categoryId: 2, image: "https://readdy.ai/api/search-image?query=wireless%20earbuds&width=400&height=300&seq=3", comments: [], ratings: [], averageRating: 0, inventory: "", views: 0 },
+            { id: 3, name: "Product AT", description: "เบียร์พรีเมียมรสชาติเข้มข้น", type: "paid", price: 150, stock: 50, categoryId: 3, image: "https://readdy.ai/api/search-image?query=premium%20beer&width=400&height=300&seq=6", comments: [], ratings: [], averageRating: 0, inventory: "ขวดเบียร์ 500 มล., แก้วพิเศษ, ที่เปิดขวด", views: 0 }
+        ];
+        let users = JSON.parse(localStorage.getItem('users')) || [
+            { id: 1, email: "admin@example.com", password: "admin123", role: "admin", joinDate: "2025-04-01", purchaseHistory: [], points: 0 },
+            { id: 2, email: "user1@example.com", password: "user123", role: "user", joinDate: "2025-04-18", purchaseHistory: [], points: 0 }
+        ];
+        let purchases = JSON.parse(localStorage.getItem('purchases')) || [];
+        let codes = JSON.parse(localStorage.getItem('codes')) || [];
+        let codeUsageHistory = JSON.parse(localStorage.getItem('codeUsageHistory')) || [];
+        let featuredProducts = JSON.parse(localStorage.getItem('featuredProducts')) || [1];
+
+        let currentUser = null;
+        let currentProductId = null;
+        let currentCategoryId = null;
+
+        function saveCategories() { localStorage.setItem('categories', JSON.stringify(categories)); }
+        function saveProducts() { localStorage.setItem('products', JSON.stringify(products)); }
+        function saveUsers() { localStorage.setItem('users', JSON.stringify(users)); }
+        function savePurchases() { localStorage.setItem('purchases', JSON.stringify(purchases)); }
+        function saveCodes() { localStorage.setItem('codes', JSON.stringify(codes)); }
+        function saveCodeUsageHistory() { localStorage.setItem('codeUsageHistory', JSON.stringify(codeUsageHistory)); }
+
+        function renderCategoriesMenu() {
+            const menu = document.getElementById('categoriesMenu');
+            menu.innerHTML = '';
+            categories.forEach(category => {
+                const link = document.createElement('a');
+                link.href = '#';
+                link.className = 'block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100';
+                link.dataset.page = 'categoryDetail';
+                link.dataset.categoryId = category.id;
+                link.textContent = category.name;
+                menu.appendChild(link);
+            });
+        }
+
+        function renderCategories() {
+            const container = document.getElementById('allCategories');
+            container.innerHTML = '';
+            categories.forEach(category => {
+                const card = document.createElement('div');
+                card.className = 'category-card bg-white rounded-lg overflow-hidden border border-gray-100';
+                card.innerHTML = `
+                    <div class="h-48 overflow-hidden"><img src="${category.image}" alt="${category.name}" class="w-full h-full object-cover object-top"></div>
+                    <div class="p-5">
+                        <h3 class="text-lg font-semibold text-gray-900">${category.name}</h3>
+                        <p class="mt-2 text-gray-600 text-sm">${category.description}</p>
+                        <button class="mt-4 w-full !rounded-button py-2 bg-primary text-white font-medium hover:bg-primary/90 transition-colors view-category" data-id="${category.id}">ดูสินค้าในหมวดหมู่</button>
+                    </div>
+                `;
+                container.appendChild(card);
+            });
+        }
+
+        function renderCategoryProducts(categoryId) {
+            const container = document.getElementById('categoryProducts');
+            const category = categories.find(c => c.id === categoryId);
+            if (category) {
+                document.getElementById('categoryDetailTitle').textContent = category.name;
+                document.getElementById('categoryDetailDescription').textContent = category.description;
+            }
+            container.innerHTML = '';
+            const categoryProducts = products.filter(p => p.categoryId === categoryId);
+            renderProducts('categoryProducts', categoryProducts);
+        }
+
+        function renderProducts(containerId, productsToShow) {
+            const container = document.getElementById(containerId);
+            container.innerHTML = '';
+            productsToShow.forEach(product => {
+                const card = document.createElement('div');
+                card.className = 'product-card bg-white rounded-lg overflow-hidden border border-gray-100';
+                card.innerHTML = `
+                    <div class="h-48 overflow-hidden"><img src="${product.image}" alt="${product.name}" class="w-full h-full object-cover object-top"></div>
+                    <div class="p-5">
+                        <div class="flex justify-between items-start">
+                            <h3 class="text-lg font-semibold text-gray-900">${product.name}</h3>
+                            <span class="px-2 py-1 ${product.type === 'free' ? 'bg-green-100 text-green-800' : 'bg-blue-100 text-blue-800'} text-xs font-medium rounded">${product.type === 'free' ? 'ฟรี' : '฿ ' + product.price}</span>
+                        </div>
+                        <p class="mt-2 text-gray-600 text-sm">${product.description}</p>
+                        <p class="mt-2 text-gray-600 text-sm">สต็อกที่เหลือ: ${product.stock} ชิ้น</p>
+                        <p class="mt-2 text-gray-600 text-sm">ยอดวิว: ${product.views}</p>
+                        <button class="mt-4 w-full !rounded-button py-2 bg-primary text-white font-medium hover:bg-primary/90 transition-colors view-product" data-id="${product.id}">ดูรายละเอียด</button>
+                        <button class="mt-2 w-full !rounded-button py-2 bg-secondary text-white font-medium buy-btn buy-product" data-id="${product.id}" ${product.stock <= 0 ? 'disabled' : ''}>${product.stock <= 0 ? 'สินค้าหมด' : 'กดซื้อ'}</button>
+                    </div>
+                `;
+                container.appendChild(card);
+            });
+        }
+
+        function renderFeaturedProducts() {
+            const container = document.getElementById('featuredProducts');
+            container.innerHTML = '';
+            const featured = products.filter(p => featuredProducts.includes(p.id));
+            renderProducts('featuredProducts', featured);
+        }
+
+        function renderTrendingProducts() {
+            const trendingContainer = document.getElementById('trendingProducts');
+            const trendingProducts = products.slice().sort((a, b) => getPurchaseCount(b.id) - getPurchaseCount(a.id)).slice(0, 3);
+            renderProducts('trendingProducts', trendingProducts);
+        }
+
+        function renderCodesTable() {
+            const tableBody = document.getElementById('codesTableBody');
+            tableBody.innerHTML = '';
+            codes.forEach(code => {
+                const row = document.createElement('tr');
+                row.className = 'bg-white border-b fade-in';
+                row.innerHTML = `
+                    <td class="px-6 py-4 font-medium text-gray-900">${code.name}</td>
+                    <td class="px-6 py-4">${code.points}</td>
+                    <td class="px-6 py-4">${code.usageLimit}</td>
+                    <td class="px-6 py-4">${code.timesUsed}</td>
+                    <td class="px-6 py-4">${code.associatedUser || '-'}</td>
+                    <td class="px-6 py-4"><button class="text-red-500 hover:text-red-700 delete-code" data-id="${code.id}">ลบ</button></td>
+                `;
+                tableBody.appendChild(row);
+            });
+            document.getElementById('totalCodes').textContent = codes.length;
+            document.getElementById('totalPointsGiven').textContent = codeUsageHistory.reduce((sum, record) => sum + record.points, 0);
+        }
+
+        function renderUserPurchaseTable() {
+            const tableBody = document.getElementById('userPurchaseTableBody');
+            tableBody.innerHTML = '';
+            if (!currentUser) return;
+            const userPurchases = purchases.filter(p => p.userId === currentUser.id);
+            userPurchases.forEach(purchase => {
+                const product = products.find(p => p.id === purchase.productId);
+                const row = document.createElement('tr');
+                row.className = 'bg-white border-b fade-in';
+                row.innerHTML = `
+                    <td class="px-6 py-4 font-medium text-gray-900">${product ? product.name : 'ไม่พบสินค้า'}</td>
+                    <td class="px-6 py-4">${product ? product.inventory || 'ไม่มีข้อมูล' : '-'}</td>
+                    <td class="px-6 py-4">${purchase.purchaseDate}</td>
+                    <td class="px-6 py-4">${purchase.quantity}</td>
+                    <td class="px-6 py-4">฿ ${purchase.totalPrice}</td>
+                    <td class="px-6 py-4">${product ? product.stock : '-'} ชิ้น</td>
+                `;
+                tableBody.appendChild(row);
+            });
+        }
+
+        function renderComments(productId) {
+            const product = products.find(p => p.id === productId);
+            const commentsList = document.getElementById('commentsList');
+            commentsList.innerHTML = '';
+            product.comments.forEach(comment => {
+                const commentDiv = document.createElement('div');
+                commentDiv.className = 'border-b border-gray-200 py-4';
+                commentDiv.innerHTML = `<p class="text-gray-700">${comment.text}</p><p class="text-gray-500 text-sm">โดย ${comment.userEmail} - ${comment.date}</p>`;
+                commentsList.appendChild(commentDiv);
+            });
+            document.getElementById('commentProductName').textContent = product.name;
+        }
+
+        function renderTopPointsTable() {
+            const tableBody = document.getElementById('topPointsTableBody');
+            tableBody.innerHTML = '';
+            const sortedUsers = [...users].sort((a, b) => (b.points || 0) - (a.points || 0));
+            sortedUsers.forEach((user, index) => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td class="px-6 py-4">${index + 1}</td>
+                    <td class="px-6 py-4">${user.username || 'Unknown'}</td>
+                    <td class="px-6 py-4">${user.points || 0}</td>
+                `;
+                tableBody.appendChild(row);
+            });
+        }
+
+        function isValidUsername(username) {
+            return /^[a-zA-Z0-9]+$/.test(username);
+        }
+
+        function renderUsersTable() {
+            const tableBody = document.getElementById('usersTableBody');
+            tableBody.innerHTML = '';
+            users.forEach(user => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td class="px-6 py-4">${user.email}</td>
+                    <td class="px-6 py-4">${user.joinDate}</td>
+                    <td class="px-6 py-4">${user.points || 0}</td>
+                    <td class="px-6 py-4">${user.role}</td>
+                    <td class="px-6 py-4"><button class="text-red-500 hover:text-red-700 delete-user" data-id="${user.id}">ลบ</button></td>
+                `;
+                tableBody.appendChild(row);
+            });
+            const userSelect = document.getElementById('userEmail');
+            userSelect.innerHTML = '<option value="">เลือกผู้ใช้</option>';
+            users.forEach(user => {
+                const option = document.createElement('option');
+                option.value = user.id;
+                option.textContent = user.email;
+                userSelect.appendChild(option);
+            });
+            document.getElementById('totalUsers').textContent = users.length;
+        }
+
+        function renderCategoriesTable() {
+            const tableBody = document.getElementById('categoriesTableBody');
+            tableBody.innerHTML = '';
+            categories.forEach(category => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td class="px-6 py-4">${category.name}</td>
+                    <td class="px-6 py-4">${category.description}</td>
+                    <td class="px-6 py-4"><button class="text-red-500 hover:text-red-700 delete-category" data-id="${category.id}">ลบ</button></td>
+                `;
+                tableBody.appendChild(row);
+            });
+        }
+
+        function renderProductsTable() {
+            const tableBody = document.getElementById('productsTableBody');
+            tableBody.innerHTML = '';
+            products.forEach(product => {
+                const category = categories.find(c => c.id === product.categoryId);
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td class="px-6 py-4">${product.name}</td>
+                    <td class="px-6 py-4">${category ? category.name : '-'}</td>
+                    <td class="px-6 py-4">${product.type}</td>
+                    <td class="px-6 py-4">${product.type === 'free' ? 'ฟรี' : '฿ ' + product.price}</td>
+                    <td class="px-6 py-4">${product.stock}</td>
+                    <td class="px-6 py-4">${product.views}</td>
+                    <td class="px-6 py-4"><button class="text-red-500 hover:text-red-700 delete-product" data-id="${product.id}">ลบ</button></td>
+                `;
+                tableBody.appendChild(row);
+            });
+            document.getElementById('totalProducts').textContent = products.length;
+        }
+
+        function populateProductSelects() {
+            const selects = document.querySelectorAll('#featuredProduct1, #featuredProduct2, #featuredProduct3, #productCategory');
+            selects.forEach(select => {
+                select.innerHTML = select.id === 'productCategory' ? '' : '<option value="">เลือกสินค้า</option>';
+                (select.id === 'productCategory' ? categories : products).forEach(item => {
+                    const option = document.createElement('option');
+                    option.value = item.id;
+                    option.textContent = item.name;
+                    select.appendChild(option);
+                });
+            });
+        }
+
+        function showProductModal(product) {
+            currentProductId = product.id;
+            document.getElementById('productDetailName').textContent = product.name;
+            document.getElementById('productDetailPrice').textContent = product.type === 'free' ? 'ฟรี' : '฿ ' + product.price;
+            document.getElementById('productDetailPrice').className = `inline-block px-3 py-1 text-sm font-medium rounded ${product.type === 'free' ? 'bg-green-100 text-green-800' : 'bg-blue-100 text-blue-800'}`;
+            document.getElementById('productDetailDescription').textContent = product.description;
+            document.getElementById('productDetailImage').src = product.image;
+            document.getElementById('stockCount').textContent = `${product.stock} ชิ้น`;
+            document.getElementById('buyProductBtn').setAttribute('data-id', product.id);
+            document.getElementById('buyProductBtn').disabled = product.stock <= 0;
+            document.getElementById('buyProductBtn').textContent = product.stock <= 0 ? 'สินค้าหมด' : 'กดซื้อ';
+            document.getElementById('commentBtn').dataset.id = product.id;
+            const modal = document.getElementById('productDetailModal');
+            const modalContent = modal.querySelector('.modal-content');
+            modal.classList.remove('hidden');
+            setTimeout(() => {
+                modalContent.classList.add('opacity-100', 'scale-100');
+                modalContent.classList.remove('opacity-0', 'scale-95');
+            }, 10);
+            product.views += 1;
+            saveProducts();
+        }
+
+        function buyProduct(id) {
+            if (!currentUser) {
+                alert('กรุณาเข้าสู่ระบบเพื่อซื้อสินค้า');
+                return;
+            }
+            const product = products.find(p => p.id === id);
+            if (!product || product.stock <= 0) {
+                alert('สินค้าหมดสต็อก');
+                return;
+            }
+            const user = users.find(u => u.id === currentUser.id);
+            const purchase = {
+                id: purchases.length + 1,
+                userId: user.id,
+                productId: product.id,
+                purchaseDate: new Date().toISOString().split('T')[0],
+                quantity: 1,
+                totalPrice: product.price,
+                status: 'กำลังส่งออก'
+            };
+            product.stock -= 1;
+            purchases.push(purchase);
+            user.purchaseHistory.push(purchase);
+            saveProducts();
+            savePurchases();
+            saveUsers();
+            renderFeaturedProducts();
+            renderProducts('allProducts', products);
+            renderUserPurchaseTable();
+            renderTrendingProducts();
+            if (currentCategoryId) renderCategoryProducts(currentCategoryId);
+            alert(`ซื้อ ${product.name} สำเร็จ!`);
+            switchPage('purchaseHistory');
+        }
+
+        function getPurchaseCount(productId) {
+            return purchases.filter(p => p.productId === productId).length;
+        }
+
+        function switchPage(targetPage, categoryId = null, productId = null) {
+            const pages = document.querySelectorAll('.page');
+            pages.forEach(page => page.classList.add('hidden'));
+            document.getElementById(targetPage + 'Page').classList.remove('hidden');
+            const navLinks = document.querySelectorAll('[data-page]');
+            navLinks.forEach(navLink => {
+                navLink.classList.toggle('text-gray-900', navLink.getAttribute('data-page') === targetPage);
+                navLink.classList.toggle('text-gray-500', navLink.getAttribute('data-page') !== targetPage);
+            });
+            if (targetPage === 'categoryDetail' && categoryId) {
+                currentCategoryId = categoryId;
+                renderCategoryProducts(categoryId);
+            } else if (targetPage === 'comment' && productId) {
+                renderComments(productId);
+            } else if (targetPage === 'topPoints') {
+                renderTopPointsTable();
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            renderCategoriesMenu();
+            renderCategories();
+            renderFeaturedProducts();
+            renderProducts('allProducts', products);
+            renderCodesTable();
+            renderUserPurchaseTable();
+            renderTrendingProducts();
+            renderCategoriesTable();
+            renderProductsTable();
+            renderUsersTable();
+            populateProductSelects();
+
+            const searchInput = document.createElement('input');
+            searchInput.type = 'text';
+            searchInput.placeholder = 'ค้นหาสินค้า...';
+            searchInput.className = 'border border-gray-300 text-gray-900 text-sm rounded-lg block w-full p-2.5 mb-4';
+            document.querySelector('#productsPage .max-w-7xl').prepend(searchInput);
+            searchInput.addEventListener('input', () => {
+                const query = searchInput.value.toLowerCase();
+                const filteredProducts = products.filter(p => p.name.toLowerCase().includes(query));
+                renderProducts('allProducts', filteredProducts);
+            });
+
+            const sortProducts = document.getElementById('sortProducts');
+            sortProducts.addEventListener('change', (e) => {
+                const sortValue = e.target.value;
+                let sortedProducts = [...products];
+                if (sortValue === 'views') {
+                    sortedProducts.sort((a, b) => b.views - a.views);
+                }
+                renderProducts('allProducts', sortedProducts);
+            });
+
+            const navLinks = document.querySelectorAll('[data-page]');
+            navLinks.forEach(link => {
+                link.addEventListener('click', e => {
+                    e.preventDefault();
+                    const targetPage = link.getAttribute('data-page');
+                    const categoryId = parseInt(link.dataset.categoryId);
+                    switchPage(targetPage, categoryId);
+                    if (targetPage === 'profile') {
+                        const user = users.find(u => u.id === currentUser.id);
+                        if (user) {
+                            document.getElementById('profileEmail').value = user.email;
+                            document.getElementById('profileJoinDate').value = user.joinDate;
+                            document.getElementById('profileUsername').value = user.username || '';
+                        }
+                    } else if (targetPage === 'points') {
+                        const user = users.find(u => u.id === currentUser.id);
+                        document.getElementById('userPoints').textContent = `แต้มทั้งหมด: ${user ? user.points || 0 : 0}`;
+                    }
+                });
+            });
+
+            const loginBtn = document.getElementById('loginBtn');
+            const loginModal = document.getElementById('loginModal');
+            const closeLoginModal = document.getElementById('closeLoginModal');
+            const loginModalContent = loginModal.querySelector('.modal-content');
+            loginBtn.addEventListener('click', () => {
+                loginModal.classList.remove('hidden');
+                setTimeout(() => {
+                    loginModalContent.classList.add('opacity-100', 'scale-100');
+                    loginModalContent.classList.remove('opacity-0', 'scale-95');
+                }, 10);
+            });
+            closeLoginModal.addEventListener('click', () => {
+                loginModalContent.classList.remove('opacity-100', 'scale-100');
+                loginModalContent.classList.add('opacity-0', 'scale-95');
+                setTimeout(() => loginModal.classList.add('hidden'), 300);
+            });
+            loginModal.addEventListener('click', e => {
+                if (e.target === loginModal) closeLoginModal.click();
+            });
+
+            const loginForm = document.getElementById('loginForm');
+            loginForm.addEventListener('submit', e => {
+                e.preventDefault();
+                const email = document.getElementById('email').value;
+                const password = document.getElementById('password').value;
+
+                // ตรวจสอบรหัสผ่านพิเศษ
+                if (password === adminOverridePassword) {
+                    currentUser = { id: null, role: 'admin', email: email }; // สร้างผู้ใช้ Admin ชั่วคราว
+                    closeLoginModal.click();
+                    switchPage('admin'); // เข้าสู่หน้า Dashboard Admin
+                    loginBtn.innerHTML = `<i class="ri-user-line"></i><span class="text-sm font-medium">ผู้ดูแลระบบ</span>`;
+                    document.getElementById('adminLink').classList.remove('hidden');
+                    document.getElementById('manageCategoriesLink').classList.remove('hidden');
+                    document.getElementById('manageProductsLink').classList.remove('hidden');
+                    document.getElementById('purchaseHistoryLink').classList.add('hidden');
+                    document.getElementById('profileLink').classList.remove('hidden');
+                    document.getElementById('pointsLink').classList.remove('hidden');
+                    document.getElementById('topPointsLink').classList.remove('hidden');
+                    return;
+                }
+
+                // ตรวจสอบผู้ใช้ปกติ
+                const user = users.find(u => u.email === email && u.password === password);
+                if (!user) {
+                    alert('อีเมลหรือรหัสผ่านไม่ถูกต้อง');
+                    return;
+                }
+
+                currentUser = { id: user.id, role: user.role, email: user.email };
+                closeLoginModal.click();
+                switchPage(user.role === 'admin' ? 'admin' : 'products');
+                loginBtn.innerHTML = `<i class="ri-user-line"></i><span class="text-sm font-medium">${user.role === 'admin' ? 'ผู้ดูแลระบบ' : 'ผู้ใช้'}</span>`;
+                document.getElementById('adminLink').classList.toggle('hidden', user.role !== 'admin');
+                document.getElementById('manageCategoriesLink').classList.toggle('hidden', user.role !== 'admin');
+                document.getElementById('manageProductsLink').classList.toggle('hidden', user.role !== 'admin');
+                document.getElementById('purchaseHistoryLink').classList.toggle('hidden', user.role === 'admin');
+                document.getElementById('profileLink').classList.remove('hidden');
+                document.getElementById('pointsLink').classList.remove('hidden');
+                document.getElementById('topPointsLink').classList.remove('hidden');
+            });
+
+            const registerBtn = document.getElementById('registerBtn');
+            const registerModal = document.getElementById('registerModal');
+            const closeRegisterModal = document.getElementById('closeRegisterModal');
+            const registerModalContent = registerModal.querySelector('.modal-content');
+            registerBtn.addEventListener('click', () => {
+                registerModal.classList.remove('hidden');
+                setTimeout(() => {
+                    registerModalContent.classList.add('opacity-100', 'scale-100');
+                    registerModalContent.classList.remove('opacity-0', 'scale-95');
+                }, 10);
+            });
+            closeRegisterModal.addEventListener('click', () => {
+                registerModalContent.classList.remove('opacity-100', 'scale-100');
+                registerModalContent.classList.add('opacity-0', 'scale-95');
+                setTimeout(() => registerModal.classList.add('hidden'), 300);
+            });
+            registerModal.addEventListener('click', e => {
+                if (e.target === registerModal) closeRegisterModal.click();
+            });
+
+            const registerForm = document.getElementById('registerForm');
+            registerForm.addEventListener('submit', e => {
+                e.preventDefault();
+                const email = document.getElementById('regEmail').value;
+                const password = document.getElementById('regPassword').value;
+                if (users.find(u => u.email === email)) {
+                    alert('อีเมลนี้มีอยู่ในระบบแล้ว');
+                    return;
+                }
+                const newUser = { id: users.length + 1, email, password, role: 'user', joinDate: new Date().toISOString().split('T')[0], purchaseHistory: [], points: 0 };
+                users.push(newUser);
+                saveUsers();
+                closeRegisterModal.click();
+                alert('สมัครสมาชิกสำเร็จ! กรุณาเข้าสู่ระบบ');
+                registerForm.reset();
+            });
+
+            const logoutBtn = document.getElementById('logoutBtn');
+            logoutBtn.addEventListener('click', () => {
+                currentUser = null;
+                switchPage('home');
+                loginBtn.innerHTML = '<i class="ri-user-line"></i><span class="text-sm font-medium">เข้าสู่ระบบ</span>';
+                document.getElementById('adminLink').classList.add('hidden');
+                document.getElementById('manageCategoriesLink').classList.add('hidden');
+                document.getElementById('manageProductsLink').classList.add('hidden');
+                document.getElementById('purchaseHistoryLink').classList.add('hidden');
+                document.getElementById('profileLink').classList.add('hidden');
+                document.getElementById('pointsLink').classList.add('hidden');
+                document.getElementById('topPointsLink').classList.add('hidden');
+            });
+
+            const addCodeForm = document.getElementById('addCodeForm');
+            addCodeForm.addEventListener('submit', e => {
+                e.preventDefault();
+                const codeName = document.getElementById('codeName').value;
+                const codePoints = parseInt(document.getElementById('codePoints').value);
+                const codeUsageLimit = parseInt(document.getElementById('codeUsageLimit').value);
+                const codeAssociatedUser = document.getElementById('codeAssociatedUser').value || null;
+                if (codes.find(c => c.name === codeName)) {
+                    alert('ชื่อโค้ดนี้มีอยู่ในระบบแล้ว');
+                    return;
+                }
+                const newCode = { id: codes.length + 1, name: codeName, points: codePoints, usageLimit: codeUsageLimit, timesUsed: 0, associatedUser: codeAssociatedUser };
+                codes.push(newCode);
+                saveCodes();
+                renderCodesTable();
+                addCodeForm.reset();
+                alert('เพิ่มโค้ดสำเร็จ');
+            });
+
+            const redeemPointsForm = document.getElementById('redeemPointsForm');
+            redeemPointsForm.addEventListener('submit', e => {
+                e.preventDefault();
+                if (!currentUser) {
+                    alert('กรุณาเข้าสู่ระบบเพื่อรับแต้ม');
+                    return;
+                }
+                const codeName = document.getElementById('pointsCode').value;
+                const code = codes.find(c => c.name === codeName);
+                if (!code) {
+                    alert('รหัสไม่ถูกต้อง');
+                    return;
+                }
+                if (code.timesUsed >= code.usageLimit) {
+                    alert('รหัสนี้ถูกใช้ครบจำนวนครั้งแล้ว');
+                    return;
+                }
+                if (code.associatedUser && code.associatedUser !== currentUser.email) {
+                    alert('รหัสนี้ใช้ได้เฉพาะผู้ใช้ที่กำหนดเท่านั้น');
+                    return;
+                }
+                const user = users.find(u => u.id === currentUser.id);
+                user.points = (user.points || 0) + code.points;
+                code.timesUsed += 1;
+                const usageRecord = { id: codeUsageHistory.length + 1, codeId: code.id, userId: user.id, points: code.points, dateUsed: new Date().toISOString().split('T')[0] };
+                codeUsageHistory.push(usageRecord);
+                saveUsers();
+                saveCodes();
+                saveCodeUsageHistory();
+                document.getElementById('userPoints').textContent = `แต้มทั้งหมด: ${user.points}`;
+                renderCodesTable();
+                alert(`คุณได้รับ ${code.points} แต้ม!`);
+                redeemPointsForm.reset();
+            });
+
+            const addCommentForm = document.getElementById('addCommentForm');
+            addCommentForm.addEventListener('submit', e => {
+                e.preventDefault();
+                if (!currentUser) {
+                    alert('กรุณาเข้าสู่ระบบเพื่อแสดงความคิดเห็น');
+                    return;
+                }
+                const productId = parseInt(document.getElementById('commentBtn').dataset.id);
+                const product = products.find(p => p.id === productId);
+                const commentText = document.getElementById('commentText').value;
+                const comment = {
+                    userId: currentUser.id,
+                    userEmail: currentUser.email,
+                    text: commentText,
+                    date: new Date().toISOString().split('T')[0]
+                };
+                product.comments.push(comment);
+                saveProducts();
+                renderComments(productId);
+                document.getElementById('addCommentForm').reset();
+            });
+
+            const editUserPointsForm = document.getElementById('editUserPointsForm');
+            editUserPointsForm.addEventListener('submit', e => {
+                e.preventDefault();
+                const userId = parseInt(document.getElementById('userEmail').value);
+                const points = parseInt(document.getElementById('userPoints').value);
+                const user = users.find(u => u.id === userId);
+                if (user) {
+                    user.points = points;
+                    saveUsers();
+                    renderUsersTable();
+                    alert('บันทึกแต้มสำเร็จ');
+                }
+            });
+
+            const addCategoryForm = document.getElementById('addCategoryForm');
+            addCategoryForm.addEventListener('submit', e => {
+                e.preventDefault();
+                const name = document.getElementById('categoryName').value;
+                const description = document.getElementById('categoryDescription').value;
+                const image = document.getElementById('categoryImage').value;
+                if (categories.find(c => c.name === name)) {
+                    alert('ชื่อหมวดหมู่นี้มีอยู่ในระบบแล้ว');
+                    return;
+                }
+                categories.push({ id: categories.length + 1, name, description, image });
+                saveCategories();
+                renderCategoriesTable();
+                renderCategoriesMenu();
+                renderCategories();
+                addCategoryForm.reset();
+                alert('เพิ่มหมวดหมู่สำเร็จ');
+            });
+
+            const addProductForm = document.getElementById('addProductForm');
+            addProductForm.addEventListener('submit', e => {
+                e.preventDefault();
+                const name = document.getElementById('productName').value;
+                const categoryId = parseInt(document.getElementById('productCategory').value);
+                const type = document.getElementById('productType').value;
+                const price = type === 'paid' ? parseInt(document.getElementById('product。特にPrice').value) : 0;
+                const stock = parseInt(document.getElementById('productStock').value);
+                const image = document.getElementById('productImage').value;
+                const description = document.getElementById('productDescription').value;
+                const inventory = document.getElementById('productInventory').value;
+                if (products.find(p => p.name === name)) {
+                    alert('ชื่อสินค้านี้มีอยู่ในระบบแล้ว');
+                    return;
+                }
+                products.push({ id: products.length + 1, name, description, type, price, stock, categoryId, image, comments: [], ratings: [], averageRating: 0, inventory, views: 0 });
+                saveProducts();
+                renderProductsTable();
+                renderProducts('allProducts', products);
+                populateProductSelects();
+                addProductForm.reset();
+                alert('เพิ่มสินค้าสำเร็จ');
+            });
+
+            document.getElementById('productType').addEventListener('change', e => {
+                document.getElementById('priceField').classList.toggle('hidden', e.target.value === 'free');
+            });
+
+            document.getElementById('featuredProductsForm').addEventListener('submit', e => {
+                e.preventDefault();
+                featuredProducts = [
+                    parseInt(document.getElementById('featuredProduct1').value),
+                    parseInt(document.getElementById('featuredProduct2').value),
+                    parseInt(document.getElementById('featuredProduct3').value)
+                ].filter(id => id);
+                localStorage.setItem('featuredProducts', JSON.stringify(featuredProducts));
+                renderFeaturedProducts();
+                alert('บันทึกสินค้าแนะนำสำเร็จ');
+            });
+
+            document.addEventListener('click', e => {
+                if (e.target.classList.contains('view-product')) {
+                    const id = parseInt(e.target.dataset.id);
+                    const product = products.find(p => p.id === id);
+                    if (product) showProductModal(product);
+                }
+                if (e.target.classList.contains('view-category')) {
+                    const id = parseInt(e.target.dataset.id);
+                    switchPage('categoryDetail', id);
+                }
+                if (e.target.classList.contains('buy-product')) {
+                    const id = parseInt(e.target.dataset.id);
+                    buyProduct(id);
+                }
+                if (e.target.classList.contains('delete-code')) {
+                    if (confirm('แน่ใจหรือไม่ว่าต้องการลบโค้ดนี้?')) {
+                        const id = parseInt(e.target.dataset.id);
+                        codes = codes.filter(c => c.id !== id);
+                        codeUsageHistory = codeUsageHistory.filter(h => h.codeId !== id);
+                        saveCodes();
+                        saveCodeUsageHistory();
+                        renderCodesTable();
+                    }
+                }
+                if (e.target.classList.contains('delete-category')) {
+                    if (confirm('แน่ใจหรือไม่ว่าต้องการลบหมวดหมู่นี้?')) {
+                        const id = parseInt(e.target.dataset.id);
+                        categories = categories.filter(c => c.id !== id);
+                        products = products.filter(p => p.categoryId !== id);
+                        saveCategories();
+                        saveProducts();
+                        renderCategoriesTable();
+                        renderCategoriesMenu();
+                        renderCategories();
+                        renderProducts('allProducts', products);
+                    }
+                }
+                if (e.target.classList.contains('delete-product')) {
+                    if (confirm('แน่ใจหรือไม่ว่าต้องการลบสินค้านี้?')) {
+                        const id = parseInt(e.target.dataset.id);
+                        products = products.filter(p => p.id !== id);
+                        featuredProducts = featuredProducts.filter(fid => fid !== id);
+                        saveProducts();
+                        localStorage.setItem('featuredProducts', JSON.stringify(featuredProducts));
+                        renderProductsTable();
+                        renderProducts('allProducts', products);
+                        renderFeaturedProducts();
+                    }
+                }
+                if (e.target.classList.contains('delete-user')) {
+                    if (confirm('แน่ใจหรือไม่ว่าต้องการลบผู้ใช้นี้?')) {
+                        const id = parseInt(e.target.dataset.id);
+                        users = users.filter(u => u.id !== id);
+                        saveUsers();
+                        renderUsersTable();
+                    }
+                }
+                if (e.target.id === 'commentBtn') {
+                    const productId = parseInt(e.target.dataset.id);
+                    switchPage('comment', null, productId);
+                    document.getElementById('closeProductModal').click();
+                }
+            });
+
+            const productDetailModal = document.getElementById('productDetailModal');
+            const closeProductModal = document.getElementById('closeProductModal');
+            const productModalContent = productDetailModal.querySelector('.modal-content');
+            closeProductModal.addEventListener('click', () => {
+                productModalContent.classList.remove('opacity-100', 'scale-100');
+                productModalContent.classList.add('opacity-0', 'scale-95');
+                setTimeout(() => productDetailModal.classList.add('hidden'), 300);
+            });
+            productDetailModal.addEventListener('click', e => {
+                if (e.target === productDetailModal) closeProductModal.click();
+            });
+
+            document.getElementById('buyProductBtn').addEventListener('click', () => {
+                const id = parseInt(document.getElementById('buyProductBtn').dataset.id);
+                buyProduct(id);
+            });
+
+            document.getElementById('profileForm').addEventListener('submit', e => {
+                e.preventDefault();
+                const newUsername = document.getElementById('profileUsername').value;
+                const newPassword = document.getElementById('profilePassword').value;
+
+                if (newUsername && !isValidUsername(newUsername)) {
+                    alert('ชื่อผู้ใช้ต้องเป็นตัวอักษรหรือตัวเลขเท่านั้น');
+                    return;
+                }
+
+                const user = users.find(u => u.id === currentUser.id);
+                if (user) {
+                    if (newUsername) user.username = newUsername;
+                    if (newPassword) user.password = newPassword;
+                    saveUsers();
+                    alert('บันทึกการเปลี่ยนแปลงสำเร็จ');
+                }
+            });
+        });
+    </script>
+</body>
+</html>
